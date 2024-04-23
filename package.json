@@ -1,0 +1,27 @@
+{
+  "name": "@sergei-dyshel/vscode",
+  "version": "1.0.0",
+  "description": "Personal library for VScode extensions",
+  "main": "src/index.ts",
+  "scripts": {
+    "postinstall": "[[ -f link.config.json ]] && npx link || true"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergei-dyshel/qcfg-js-vscode.git"
+  },
+  "author": "Sergei Dyshel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sergei-dyshel/qcfg-js-vscode/issues"
+  },
+  "homepage": "https://github.com/sergei-dyshel/qcfg-js-vscode#readme",
+  "dependencies": {
+    "@sergei-dyshel/node": "sergei-dyshel/qcfg-js-node#53445797"
+  },
+  "devDependencies": {
+    "@sergei-dyshel/eslint-config": "sergei-dyshel/eslint-config#b8d3a6f9",
+    "@sergei-dyshel/prettier-config": "sergei-dyshel/prettier-config#b8b45da",
+    "link": "^2.1.0"
+  }
+}
