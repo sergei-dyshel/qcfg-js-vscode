@@ -5,7 +5,9 @@
   "main": "src/index.ts",
   "exports": {
     "./commands": "./src/commands.ts",
-    "./when": "./src/when/index.ts"
+    "./when": "./src/when/index.ts",
+    "./quickpick": "./src/quickpick.ts",
+    "./config": "./src/config/index.ts"
   },
   "scripts": {
     "watch": "npx tsc --watch --noEmit --incremental",
