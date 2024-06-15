@@ -3,8 +3,17 @@
   "version": "1.0.0",
   "description": "Personal library for VScode extensions",
   "main": "src/index.ts",
+  "exports": {
+    "./commands": "./src/commands.ts",
+    "./when": "./src/when/index.ts"
+  },
   "scripts": {
-    "postinstall": "[[ -f link.config.json ]] && npx link || true"
+    "watch": "npx tsc --watch --noEmit --incremental",
+    "compile": "npx tsc --noEmit",
+    "lint": "qcfg-eslint",
+    "format-check": "qcfg-prettier",
+    "format-write": "qcfg-prettier-write",
+    "test": "qcfg-test-all"
   },
   "repository": {
     "type": "git",
@@ -16,12 +25,15 @@
     "url": "https://github.com/sergei-dyshel/qcfg-js-vscode/issues"
   },
   "homepage": "https://github.com/sergei-dyshel/qcfg-js-vscode#readme",
+  "prettier": "@sergei-dyshel/prettier-config",
   "dependencies": {
-    "@sergei-dyshel/node": "sergei-dyshel/qcfg-js-node#53445797"
+    "@sergei-dyshel/node": "*",
+    "@sergei-dyshel/typescript": "*"
   },
   "devDependencies": {
-    "@sergei-dyshel/eslint-config": "sergei-dyshel/eslint-config#b8d3a6f9",
-    "@sergei-dyshel/prettier-config": "sergei-dyshel/prettier-config#b8b45da",
-    "link": "^2.1.0"
+    "@sergei-dyshel/eslint-config": "*",
+    "@sergei-dyshel/prettier-config": "*",
+    "@types/node": "^18.18.6",
+    "@types/vscode": "1.90.0"
   }
 }
