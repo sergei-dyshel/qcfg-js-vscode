@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./commands": "./src/commands.ts",
+    "./document": "./src/document.ts",
     "./when": "./src/when/index.ts",
     "./quickpick": "./src/quickpick.ts",
     "./config": "./src/config/index.ts"
