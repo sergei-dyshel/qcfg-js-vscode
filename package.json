@@ -10,7 +10,8 @@
     "./when": "./src/when/index.ts",
     "./quickpick": "./src/quickpick.ts",
     "./config": "./src/config/index.ts",
-    "./tabs": "./src/tabs.ts"
+    "./tabs": "./src/tabs.ts",
+    "./icon": "./src/icon.ts"
   },
   "scripts": {
     "watch": "npx tsc --watch --noEmit",
