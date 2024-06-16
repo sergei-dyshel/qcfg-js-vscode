@@ -4,6 +4,7 @@
   "description": "Personal library for VScode extensions",
   "main": "src/index.ts",
   "exports": {
+    ".": "./src/index.ts",
     "./commands": "./src/commands.ts",
     "./when": "./src/when/index.ts",
     "./quickpick": "./src/quickpick.ts",
@@ -11,7 +12,7 @@
   },
   "scripts": {
     "watch": "npx tsc --watch --noEmit --incremental",
-    "compile": "npx tsc --noEmit",
+    "compile": "npx tsc --noEmit --incremental",
     "lint": "qcfg-eslint",
     "format-check": "qcfg-prettier",
     "format-write": "qcfg-prettier-write",
