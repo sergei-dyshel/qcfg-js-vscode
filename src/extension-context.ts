@@ -1,7 +1,8 @@
 import { assert, assertNotNull } from "@sergei-dyshel/typescript/error";
 import type * as vscode from "vscode";
+import type { ExtensionContext as VsCodeExtensionContext } from "vscode";
 
-export { ExtensionContext } from "vscode";
+export { VsCodeExtensionContext as ExtensionContext };
 
 export namespace ExtensionContext {
   let currentContext: vscode.ExtensionContext | undefined;
