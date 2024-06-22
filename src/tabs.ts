@@ -7,7 +7,7 @@ import {
   type Tab,
   type ViewColumn,
 } from "vscode";
-import { focusNextGroup } from "./commands";
+import { focusNextGroup } from "./builtin-commands";
 
 export type TabType = "diff" | "text";
 

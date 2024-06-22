@@ -1,6 +1,6 @@
 import { assert } from "@sergei-dyshel/typescript/error";
 import type { ValueOf } from "@sergei-dyshel/typescript/types";
-import { setContext, type ContextValue } from "../commands";
+import { setContext, type ContextValue } from "../builtin-commands";
 
 interface Operand {
   string: () => string;

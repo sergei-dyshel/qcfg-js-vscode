@@ -1,5 +1,5 @@
 import type { FormattingOptions, TextEditor } from "vscode";
-import { executeFormatDocumentProvider } from "./commands";
+import { executeFormatDocumentProvider } from "./builtin-commands";
 
 export async function formatDocument(editor: TextEditor, options?: FormattingOptions) {
   const edits = await executeFormatDocumentProvider(editor.document.uri, options);

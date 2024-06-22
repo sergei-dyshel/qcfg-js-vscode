@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./commands": "./src/commands.ts",
+    "./builtin-commands": "./src/builtin-commands.ts",
     "./document": "./src/document.ts",
     "./when": "./src/when/index.ts",
     "./quickpick": "./src/quickpick.ts",
