@@ -1,5 +1,6 @@
 import { assertNotNull } from "@sergei-dyshel/typescript/error";
 import type { AnyFunction } from "@sergei-dyshel/typescript/types";
+import { zod } from "@sergei-dyshel/typescript/zod";
 import { registerCommand } from "@sergei-dyshel/vscode/error-handling";
 import type * as vscode from "vscode";
 import {
@@ -12,6 +13,7 @@ import {
   window,
   type CancellationToken,
 } from "vscode";
+import { UriFactory } from "./uri-factory";
 
 export function cancellationTokenToAbortSignal(token: CancellationToken): AbortSignal;
 export function cancellationTokenToAbortSignal(token: undefined): undefined;
@@ -78,3 +80,11 @@ export class HiddenCommand<F extends AnyFunction> {
     return this.callback(...args);
   }
 }
+
+const gitQuerySchema = zod.object({
+  path: zod.string(),
+  ref: zod.string(),
+  submoduleOf: zod.string().optional(),
+});
+
+export const gitUri = new UriFactory("git", gitQuerySchema);
