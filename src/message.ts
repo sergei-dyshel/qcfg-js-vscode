@@ -61,6 +61,7 @@ export async function confirmWithConfig(
     : await ask("error", message, ...answers);
   switch (answer) {
     case "No":
+      return false;
     case undefined:
       throw new AbortError("User cancelled dialog");
     case "Yes":

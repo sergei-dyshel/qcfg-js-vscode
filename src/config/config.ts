@@ -5,6 +5,7 @@ import {
   type ConfigurationChangeEvent,
   type ConfigurationScope,
   type ConfigurationTarget,
+  type WorkspaceConfiguration,
 } from "vscode";
 
 interface PropertySpec<S extends zod.ZodTypeAny = zod.ZodTypeAny> {

@@ -1,4 +1,7 @@
 import { assertNotNull } from "@sergei-dyshel/typescript/error";
+import type { AnyFunction } from "@sergei-dyshel/typescript/types";
+import { registerCommand } from "@sergei-dyshel/vscode/error-handling";
+import type * as vscode from "vscode";
 import {
   ProcessExecution,
   ShellExecution,
@@ -49,4 +52,29 @@ export async function runInTerminal(
   task.presentationOptions.focus = options.focus;
   if (options.silent) task.presentationOptions.reveal = TaskRevealKind.Silent;
   await tasks.executeTask(task);
+}
+
+export class HiddenCommand<F extends AnyFunction> {
+  constructor(
+    private command: string,
+    private callback: F,
+  ) {}
+
+  register() {
+    return registerCommand(this.command, this.callback);
+  }
+
+  makeReference(...args: Parameters<F>) {
+    const cmd: vscode.Command = {
+      title: "",
+      command: this.command,
+      arguments: args,
+    };
+    return cmd;
+  }
+
+  run(...args: Parameters<F>): ReturnType<F> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return this.callback(...args);
+  }
 }
