@@ -14,7 +14,8 @@
     "./icon": "./src/icon.ts",
     "./error-handling": "./src/error-handling.ts",
     "./tree": "./src/tree.ts",
-    "./uri-factory": "./src/uri-factory.ts"
+    "./uri-factory": "./src/uri-factory.ts",
+    "./progress": "./src/progress.ts"
   },
   "scripts": {
     "watch": "npx tsc --watch --noEmit",
