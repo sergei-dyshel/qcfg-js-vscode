@@ -12,7 +12,8 @@
     "./config": "./src/config/index.ts",
     "./tabs": "./src/tabs.ts",
     "./icon": "./src/icon.ts",
-    "./error-handling": "./src/error-handling.ts"
+    "./error-handling": "./src/error-handling.ts",
+    "./tree": "./src/tree.ts"
   },
   "scripts": {
     "watch": "npx tsc --watch --noEmit",
