@@ -307,6 +307,7 @@ export abstract class Basic {
    * Main decorator API, to be overriden for other kinds of commands
    *
    * The command type should be the same as in {@link Basic.processCommand}
+   *
    * @param command
    */
   static command(command: DecoratingCommand) {
@@ -317,6 +318,7 @@ export abstract class Basic {
    * Convert command added in {@link Basic.command} to proper type.
    *
    * Should be overriden for different kinds of commands.
+   *
    * @param command
    * @param _counter
    */
