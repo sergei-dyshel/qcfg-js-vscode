@@ -5,10 +5,11 @@ import * as fail from "@sergei-dyshel/typescript/error";
 import { assert } from "@sergei-dyshel/typescript/error";
 import { objectGetOrSetProperty } from "@sergei-dyshel/typescript/object";
 import type { Awaitable } from "@sergei-dyshel/typescript/types";
-import { Commands, URI } from "@sergei-dyshel/vscode";
-import { reportErrors } from "@sergei-dyshel/vscode/error-handling";
 import * as vscode from "vscode";
 import { libraryLogger } from "./common";
+import { reportErrors } from "./error-handling";
+import { Commands } from "./namespaces/commands";
+import { URI } from "./uri";
 
 const logger = new ModuleLogger({ parent: libraryLogger });
 
