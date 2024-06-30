@@ -1,6 +1,8 @@
 {
   "extends": "@sergei-dyshel/typescript/tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src"
-  }
+    "rootDir": "src",
+    "outDir": "out"
+  },
+  "include": ["src/**/*.ts"]
 }
