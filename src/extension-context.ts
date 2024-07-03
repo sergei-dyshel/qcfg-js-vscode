@@ -1,6 +1,6 @@
 import { assert, assertNotNull } from "@sergei-dyshel/typescript/error";
-import type * as vscode from "vscode";
 import type { ExtensionContext as VsCodeExtensionContext } from "vscode";
+import * as vscode from "vscode";
 
 export { VsCodeExtensionContext as ExtensionContext };
 
@@ -15,6 +15,10 @@ export namespace ExtensionContext {
   export function globalStorageUri() {
     // fix sceme from `vscode-userdata` to 'file'
     return get().globalStorageUri.with({ scheme: "file" });
+  }
+
+  export function inDevelopmentMode() {
+    return get().extensionMode === vscode.ExtensionMode.Development;
   }
 
   export function set(context: vscode.ExtensionContext | undefined) {

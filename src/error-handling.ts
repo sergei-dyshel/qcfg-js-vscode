@@ -1,7 +1,9 @@
+import type { StackFrameFormatOptions } from "@sergei-dyshel/node/callsites";
 import { RootLogger } from "@sergei-dyshel/node/logging";
 import { AbortError, formatError, wrapWithCatch } from "@sergei-dyshel/typescript/error";
 import type { AnyFunction } from "@sergei-dyshel/typescript/types";
 import * as vscode from "vscode";
+import { ExtensionContext } from "./extension-context";
 import { Message } from "./namespaces/message";
 
 const logger = RootLogger.get();
@@ -12,10 +14,13 @@ interface ReportErrorsParams {
 }
 
 export function handleError(err: unknown, options?: { msgPrefix?: string }) {
+  const stackFrameFormat: StackFrameFormatOptions = {
+    file: ExtensionContext.inDevelopmentMode() ? "url" : "relative",
+  };
   if (AbortError.is(err)) {
-    logger.logError(err, { prefix: "User aborted: ", hideName: true });
+    logger.logError(err, { prefix: "User aborted: ", hideName: true, stackFrameFormat });
   } else {
-    logger.logError(err, { prefix: "Exception thrown: " });
+    logger.logError(err, { prefix: "Exception thrown: ", stackFrameFormat });
     Message.show("error", (options?.msgPrefix ?? "") + formatError(err, { showCause: true }));
   }
 }
