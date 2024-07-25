@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./tsconfig.json": "./tsconfig.json",
     "./builtin-commands": "./src/builtin-commands.ts",
     "./document": "./src/document.ts",
     "./when": "./src/when/index.ts",
@@ -15,7 +16,8 @@
     "./error-handling": "./src/error-handling.ts",
     "./tree": "./src/tree.ts",
     "./uri-factory": "./src/uri-factory.ts",
-    "./progress": "./src/progress.ts"
+    "./progress": "./src/progress.ts",
+    "./mock-register": "./mock-register.js"
   },
   "scripts": {
     "watch": "npx tsc --watch --noEmit",

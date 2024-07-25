@@ -8,20 +8,20 @@ export class ThemeIcon {}
 export class ThemeColor {}
 
 export enum TreeItemCollapsibleState {
-	EXPANDED = 0,
+  EXPANDED = 0,
 }
 
 export namespace workspace {
-	export const fs = undefined;
+  export const fs = undefined;
 }
 
 export class Uri {}
 
-export class window {}
+export namespace window {}
 
-export class tasks {}
+export namespace tasks {}
 
-export class commands {}
+export namespace commands {}
 
 export class ProcessExecution {}
 
@@ -70,3 +70,23 @@ export class CommentMode {}
 export class comments {}
 
 export class ExtensionMode {}
+
+export class Position {}
+
+export class Location {}
+
+export class CompletionItem {}
+
+export class CodeLens {}
+
+export class DocumentLink {}
+
+export enum CodeActionKind {
+  Empty = "",
+}
+
+export class CallHierarchyItem {}
+
+export class TypeHierarchyItem {}
+
+export enum SymbolKind {}

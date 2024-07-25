@@ -2,4 +2,4 @@
 
 import myconfig from "@sergei-dyshel/eslint-config";
 
-export default [...myconfig];
+export default [...myconfig, { ignores: ["mock-register.js"] }];
