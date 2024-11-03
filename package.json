@@ -21,8 +21,7 @@
   },
   "scripts": {
     "watch": "tsc --watch --noEmit",
-    "compile": "tsc --noEmit",
-    "test": "qcfg-test-all"
+    "compile": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
