@@ -22,9 +22,6 @@
   "scripts": {
     "watch": "tsc --watch --noEmit",
     "compile": "tsc --noEmit",
-    "lint": "qcfg-eslint",
-    "format-check": "qcfg-prettier",
-    "format-write": "qcfg-prettier-write",
     "test": "qcfg-test-all"
   },
   "repository": {
