@@ -8,7 +8,7 @@
       "problemMatcher": ["$tsc-watch"],
       "isBackground": true,
       "runOptions": {
-        "runOn": "folderOpen"
+        "runOn": "default"
       },
       "presentation": {
         "reveal": "never"
