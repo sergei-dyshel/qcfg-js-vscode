@@ -2,19 +2,19 @@ import { assert } from "@sergei-dyshel/typescript/error";
 import type { ValueOf } from "@sergei-dyshel/typescript/types";
 import { setContext, type ContextValue } from "../builtin-commands";
 
-interface Operand {
+export interface Operand {
   string: () => string;
 }
 
 class Literal<T extends number | string> implements Operand {
-  constructor(private readonly value: T) {}
+  constructor(readonly value: T) {}
   string() {
     return String(this.value);
   }
 }
 
 class Context implements Operand {
-  constructor(public readonly key: string) {}
+  constructor(readonly key: string) {}
   string() {
     return this.key;
   }
@@ -57,7 +57,7 @@ const MIN_PRIORITY = 0;
 export abstract class Clause {
   protected abstract stringImpl(): string;
 
-  constructor(protected readonly priority: number = MIN_PRIORITY) {
+  constructor(readonly priority: number = MIN_PRIORITY) {
     assert(priority < MAX_PRIORITY);
   }
 
@@ -69,9 +69,9 @@ export abstract class Clause {
 
 class Binary extends Clause {
   constructor(
-    private readonly left: Operand,
-    private readonly op: Operator,
-    private readonly right: Operand,
+    readonly left: Operand,
+    readonly op: Operator,
+    readonly right: Operand,
   ) {
     super(1 /* priority */);
   }
@@ -86,7 +86,7 @@ class Binary extends Clause {
 }
 
 class And extends Clause {
-  constructor(private readonly clauses: readonly Clause[]) {
+  constructor(readonly clauses: readonly Clause[]) {
     super(2 /* priority */);
   }
 
@@ -96,7 +96,7 @@ class And extends Clause {
 }
 
 class Or extends Clause {
-  constructor(private readonly clauses: readonly Clause[]) {
+  constructor(readonly clauses: readonly Clause[]) {
     super(3 /* priority */);
   }
 
@@ -106,7 +106,7 @@ class Or extends Clause {
 }
 
 class Not extends Clause {
-  constructor(private readonly clause: Clause) {
+  constructor(readonly clause: Clause) {
     super();
   }
 
