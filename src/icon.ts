@@ -30,6 +30,11 @@ export class Icon {
   }
 }
 
+/**
+ * Codicons builtin in VS code
+ *
+ * Look in https://microsoft.github.io/vscode-codicons/dist/codicon.html
+ */
 export namespace BuiltinIcon {
   export const DELETE = new Icon("delete");
   export const GLOBE = new Icon("globe");
@@ -60,6 +65,8 @@ export namespace BuiltinIcon {
   export const ORGANIZATION = new Icon("organization");
   export const DIFF_MULTIPLE = new Icon("diff-multiple");
   export const COPY = new Icon("copy");
+  export const MERGE = new Icon("merge");
+  export const CIRCLE_SLASH = new Icon("circle-slash");
 }
 
 export class FontIcon extends Icon {
