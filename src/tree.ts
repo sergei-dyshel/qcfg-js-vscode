@@ -340,12 +340,12 @@ export class Tree<T extends TreeNode<T>>
     })();
   }
 
-  handleDrop(
+  async handleDrop(
     target: T | undefined,
     dataTransfer: vscode.DataTransfer,
     _token: vscode.CancellationToken,
   ) {
-    return reportErrors(() => {
+    return reportErrors(async () => {
       const dtItem = dataTransfer.get(this.mimeType);
       fail.assertNotNull(dtItem, `No DataTransferItem for tree's MIME type`);
       const sourceUri = dtItem.value as string;
@@ -360,7 +360,10 @@ export class Tree<T extends TreeNode<T>>
         return;
       }
       // if (source.__type === 'uri') logger.debug(`Tree view ${this.viewId}: dropping onto`, source, target);
-      if (target.onDrop) return target.onDrop(source);
+      if (target.onDrop) {
+        await target.onDrop(source);
+        return;
+      }
       this.logger.debug(`onDrop not implemented`, target);
     })();
   }
