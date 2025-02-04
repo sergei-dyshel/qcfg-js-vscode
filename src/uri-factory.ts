@@ -2,7 +2,7 @@ import { assert } from "@sergei-dyshel/typescript/error";
 import type { zod } from "@sergei-dyshel/typescript/zod";
 import jsonStableStringify from "json-stable-stringify";
 import * as vscode from "vscode";
-import { reportErrors } from "./error-handling";
+import { reportErrorsNoRethrow } from "./error-handling";
 import { When } from "./when";
 
 export type FileDecorator<T> = (_: T) => vscode.ProviderResult<vscode.FileDecoration>;
@@ -194,7 +194,7 @@ export class SimpleUriDecorationProvider {
       ...this.decorate.map((decorate) =>
         vscode.window.registerFileDecorationProvider({
           onDidChangeFileDecorations: this.onDidChangeEmitter.event,
-          provideFileDecoration: reportErrors(
+          provideFileDecoration: reportErrorsNoRethrow(
             (uri: vscode.Uri, _token: vscode.CancellationToken) => {
               if (uri.scheme !== this.scheme) return;
               return decorate(uri.path);

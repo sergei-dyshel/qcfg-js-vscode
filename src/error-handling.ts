@@ -9,7 +9,6 @@ import { Message } from "./namespaces/message";
 const logger = RootLogger.get();
 
 interface ReportErrorsParams {
-  rethrow?: boolean;
   prefix?: string;
 }
 
@@ -25,29 +24,30 @@ export function handleError(err: unknown, options?: { msgPrefix?: string }) {
   }
 }
 
-export function reportErrors<F extends AnyFunction>(
+export function reportErrorsAndRethrow<F extends AnyFunction>(
   func: F,
-  options?: ReportErrorsParams & { rethrow: true },
-): (...funcArgs: Parameters<F>) => ReturnType<F>;
-export function reportErrors<F extends AnyFunction>(
-  func: F,
-  options: ReportErrorsParams & { rethrow?: false },
-): (...funcArgs: Parameters<F>) => ReturnType<F> | undefined;
-
-export function reportErrors<T extends AnyFunction>(
-  func: T,
   options?: ReportErrorsParams,
-): Function {
+) {
   return wrapWithCatch(func, (err) => {
     handleError(err, { msgPrefix: options?.prefix });
-    if (options?.rethrow) throw err;
+    throw err;
+  }) as F;
+}
+
+export function reportErrorsNoRethrow<T extends AnyFunction>(
+  func: T,
+  options?: ReportErrorsParams,
+) {
+  return wrapWithCatch(func, (err) => {
+    handleError(err, { msgPrefix: options?.prefix });
+    return undefined;
   });
 }
 
 export function registerCommand(command: string, callback: AnyFunction): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
-    reportErrors(callback, { prefix: `Failed to run command "${command}": ` }),
+    reportErrorsNoRethrow(callback, { prefix: `Failed to run command "${command}": ` }),
   );
 }
 
@@ -65,5 +65,5 @@ export function listen<T>(
   event: vscode.Event<T>,
   listener: (e: T) => void | Thenable<void>,
 ): vscode.Disposable {
-  return event(reportErrors(listener));
+  return event(reportErrorsNoRethrow(listener));
 }

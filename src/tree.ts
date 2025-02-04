@@ -7,7 +7,7 @@ import { objectGetOrSetProperty } from "@sergei-dyshel/typescript/object";
 import type { Awaitable } from "@sergei-dyshel/typescript/types";
 import * as vscode from "vscode";
 import { libraryLogger } from "./common";
-import { reportErrors } from "./error-handling";
+import { reportErrorsAndRethrow, reportErrorsNoRethrow } from "./error-handling";
 import { Commands } from "./namespaces/commands";
 import { URI } from "./uri";
 
@@ -76,7 +76,7 @@ export class Tree<T extends TreeNode<T>>
       dragAndDropController: options?.allowDragAndDrop ? this : undefined,
     });
     this.treeView.onDidChangeSelection(
-      reportErrors((event: vscode.TreeViewSelectionChangeEvent<T>) =>
+      reportErrorsNoRethrow((event: vscode.TreeViewSelectionChangeEvent<T>) =>
         this.onDidChangeSelection(event),
       ),
     );
@@ -199,7 +199,7 @@ export class Tree<T extends TreeNode<T>>
 
   // REFACTOR: go over all getTreeItem implementations and remove explicit caching
   getTreeItem(node: T) {
-    return reportErrors(
+    return reportErrorsAndRethrow(
       async () => {
         const metadata = this.getMetadata(node);
         if (metadata.treeItem) return metadata.treeItem;
@@ -257,7 +257,6 @@ export class Tree<T extends TreeNode<T>>
       },
       {
         prefix: "getTreeItem failed: ",
-        rethrow: true,
       },
     )();
   }
@@ -268,7 +267,7 @@ export class Tree<T extends TreeNode<T>>
       if (metadata.children) return metadata.children;
     }
 
-    return reportErrors(
+    return reportErrorsNoRethrow(
       async () => {
         if (node === undefined) {
           if (this.promise) {
@@ -323,7 +322,7 @@ export class Tree<T extends TreeNode<T>>
     dataTransfer: vscode.DataTransfer,
     _token: vscode.CancellationToken,
   ) {
-    reportErrors(() => {
+    reportErrorsNoRethrow(() => {
       assert(sources.length === 1, "Multi-select not supported");
       const node = sources[0];
       if (!node.onDrag) return;
@@ -345,7 +344,7 @@ export class Tree<T extends TreeNode<T>>
     dataTransfer: vscode.DataTransfer,
     _token: vscode.CancellationToken,
   ) {
-    return reportErrors(async () => {
+    return reportErrorsNoRethrow(async () => {
       const dtItem = dataTransfer.get(this.mimeType);
       fail.assertNotNull(dtItem, `No DataTransferItem for tree's MIME type`);
       const sourceUri = dtItem.value as string;
