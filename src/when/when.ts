@@ -179,11 +179,12 @@ export const commentController = new StringContext("commentController");
 export const commentThread = new FlagsContext<CommentThread>("commentThread");
 export const commentThreadIsEmpty = new BooleanContext("commentThreadIsEmpty");
 export const resourceScheme = new StringContext("resourceScheme");
+export const activeEditor = new StringContext("activeEditor");
 export const view = new StringContext("view");
 export const viewItem = new StringContext("viewItem");
 export const comment = new FlagsContext<Comment>("comment");
 export const commentIsEmpty = new BooleanContext("commentIsEmpty");
-export const inMultiDiffEditor = new BooleanContext("inMultiDiffEditor");
+export const inMultiDiffEditor = activeEditor.equals("multiDiffEditor");
 
 export const fileScheme = resourceScheme.equals("file");
 
