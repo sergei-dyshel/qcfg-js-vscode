@@ -19,7 +19,7 @@ export function handleError(err: unknown, options?: { msgPrefix?: string }) {
   if (AbortError.is(err)) {
     logger.logError(err, { prefix: "User aborted: ", hideName: true, stackFrameFormat });
   } else {
-    logger.logError(err, { prefix: "Exception thrown: ", stackFrameFormat });
+    logger.logError(err, { prefix: "Exception thrown: ", stackFrameFormat, showData: true });
     Message.show("error", (options?.msgPrefix ?? "") + formatError(err, { showCause: true }));
   }
 }
