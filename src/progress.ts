@@ -1,100 +1,11 @@
+import { AsyncContext } from "@sergei-dyshel/node";
 import { ModuleLogger } from "@sergei-dyshel/node/logging";
 import { assert, assertNotNull } from "@sergei-dyshel/typescript/error";
 import { cancellationTokenToAbortSignal } from "@sergei-dyshel/vscode";
-import { reportAsyncErrors } from "@sergei-dyshel/vscode/error-handling";
 import * as vscode from "vscode";
 import { libraryLogger } from "./common";
 
 const logger = new ModuleLogger({ parent: libraryLogger });
-
-// REFACTOR: remove Task/Activity API if not used
-export class Task {
-  readonly signal: AbortSignal;
-
-  private disposed = false;
-  private pending = new Map<any, string>();
-
-  constructor(
-    private readonly progress: vscode.Progress<{ message?: string; increment?: number }>,
-    token: vscode.CancellationToken,
-  ) {
-    this.signal = cancellationTokenToAbortSignal(token);
-  }
-
-  async runSubtask<T>(subtitle: string, promise: Promise<T>): Promise<T> {
-    assert(!this.disposed, "Trying to run subtask of an already finished task");
-    this.pending.set(promise, subtitle);
-    this.updateProgress();
-    try {
-      return await promise;
-    } finally {
-      this.pending.delete(promise);
-      this.updateProgress();
-    }
-  }
-
-  get hasPending() {
-    return this.pending.size > 0;
-  }
-
-  dispose() {
-    this.disposed = true;
-  }
-
-  private updateProgress() {
-    const size = this.pending.size;
-    if (size > 1) this.progress.report({ message: `${size} pending` });
-    else if (size == 1) this.progress.report({ message: [...this.pending.values()][0] });
-    else this.progress.report({ message: "" });
-  }
-}
-
-export function runTask<T>(title: string, func: (task: Task) => Promise<T>): Promise<T> {
-  return vscode.window.withProgress(
-    {
-      title,
-      location: vscode.ProgressLocation.Notification,
-      cancellable: true,
-    },
-    async (progress, token) => {
-      const task = new Task(progress, token);
-      try {
-        return await func(task);
-      } finally {
-        task.dispose();
-      }
-    },
-  ) as Promise<T>;
-}
-
-export class Activity {
-  private task?: Task;
-  private resolve?: () => void;
-
-  constructor(private readonly title: string) {}
-
-  async run<T>(subtitle: string, func: (task: Task) => Promise<T>): Promise<T> {
-    if (!this.task) {
-      reportAsyncErrors(
-        runTask(this.title, (task) => {
-          // assuming this will happen sync
-          this.task = task;
-          return new Promise<void>((resolve, _) => {
-            this.resolve = resolve;
-          });
-        }),
-      );
-    }
-    assertNotNull(this.task);
-    try {
-      return await this.task.runSubtask(subtitle, func(this.task));
-    } finally {
-      if (!this.task.hasPending) this.resolve!();
-      this.task = undefined;
-      this.resolve = undefined;
-    }
-  }
-}
 
 export class Progress {
   private thenable?: Thenable<void>;
@@ -108,7 +19,7 @@ export class Progress {
   private pending = new Map<number, string>();
   private nrFinished = 0;
 
-  public signal?: AbortSignal;
+  public private?: AbortSignal;
 
   constructor(private title: string) {}
 
@@ -124,8 +35,8 @@ export class Progress {
         },
         (progress, token) => {
           // XXX: make progress window cancellable and cancelling will reject promise and present warning to user
-          assert(this.signal === undefined);
-          this.signal = cancellationTokenToAbortSignal(token);
+          assert(this.private === undefined);
+          this.private = cancellationTokenToAbortSignal(token);
           this.progress = progress;
           this.updateProgress();
           return new Promise<void>((resolve, _) => {
@@ -137,9 +48,9 @@ export class Progress {
     this.updateProgress();
 
     // assuming vscode.window.wihtProgress will call callback synchronously
-    assertNotNull(this.signal);
+    assertNotNull(this.private);
     try {
-      return await func();
+      return await AsyncContext.run(AsyncContext.addSignal(this.private), func);
     } finally {
       this.nrFinished += 1;
       assert(this.pending.delete(id));
@@ -147,7 +58,7 @@ export class Progress {
       if (this.pending.size === 0) {
         this.dismiss!();
         this.dismiss = undefined;
-        this.signal = undefined;
+        this.private = undefined;
         this.thenable = undefined;
         this.progress = undefined;
         this.nrFinished = 0;
