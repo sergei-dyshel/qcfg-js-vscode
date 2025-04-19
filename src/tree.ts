@@ -1,10 +1,10 @@
 import { InstanceLogger, ModuleLogger, type Logger } from "@sergei-dyshel/node/logging";
 import { DisposableContainer } from "@sergei-dyshel/typescript";
-import { mapAsync } from "@sergei-dyshel/typescript/array";
+import { mapAsync, normalizeArray } from "@sergei-dyshel/typescript/array";
 import * as fail from "@sergei-dyshel/typescript/error";
 import { assert } from "@sergei-dyshel/typescript/error";
 import { objectGetOrSetProperty } from "@sergei-dyshel/typescript/object";
-import type { Awaitable } from "@sergei-dyshel/typescript/types";
+import type { Arrayable, Awaitable } from "@sergei-dyshel/typescript/types";
 import * as vscode from "vscode";
 import { libraryLogger } from "./common";
 import { reportErrorsAndRethrow, reportErrorsNoRethrow } from "./error-handling";
@@ -13,6 +13,11 @@ import { URI } from "./uri";
 
 const logger = new ModuleLogger({ parent: libraryLogger });
 
+/**
+ * Interface that every tree item must implement
+ *
+ * For better type safety can be parametrized by node type (but not required).
+ */
 export interface TreeNode<T = unknown> {
   /** Same as {@link vscode.TreeDataProvider.getChildren} */
   getChildren?(): Awaitable<T[]> | undefined;
@@ -33,8 +38,12 @@ export interface TreeNode<T = unknown> {
   /**
    * When parent node provides {@link vscode.TreeItem.resourceUri}, construct this node's resourceUri
    * by appending these segments to path.
+   *
+   * NOTE: when defined, {@link vscode.TreeItem.resourceUri} returned {@link TreeNode.getTreeItem} for
+   * this node should be undefined
    */
-  getUriPathSegments?(): string[] | string;
+  // REFACTOR: make this a property
+  getUriPathSegments?(): Arrayable<string>;
   /**
    * Provide tooltip/command later when ${@link Tree.getTreeItem} returned tree item without them.
    *
@@ -68,6 +77,10 @@ export class Tree<T extends TreeNode<T>>
   static readonly EXPANDED = vscode.TreeItemCollapsibleState.Expanded;
   static readonly COLLAPSED = vscode.TreeItemCollapsibleState.Collapsed;
 
+  getData() {
+    return this.data;
+  }
+
   createView(viewId: string, options?: { allowDragAndDrop?: boolean; decorationNames?: string[] }) {
     this.viewId = viewId;
     this.logger = new InstanceLogger(viewId, { parent: logger });
@@ -88,11 +101,11 @@ export class Tree<T extends TreeNode<T>>
             onDidChangeFileDecorations: this.decorationChangeEmitter.event,
             provideFileDecoration: (uri: vscode.Uri, _token: vscode.CancellationToken) => {
               const node = this.findFirstNode((node) => {
-                const resourceUri = this.getMetadata(node).treeItem?.resourceUri;
+                const resourceUri = Tree.getMetadata(node).treeItem?.resourceUri;
                 return resourceUri ? URI.equals(uri, resourceUri) : false;
               });
               if (!node) return;
-              const metadata = this.getMetadata(node);
+              const metadata = Tree.getMetadata(node);
               if (!metadata.decorations && node.getDecorations) {
                 metadata.decorations = node.getDecorations();
                 for (const name in metadata.decorations)
@@ -144,7 +157,7 @@ export class Tree<T extends TreeNode<T>>
   }
 
   updateDecorations(node: T, propogateToParent = false) {
-    const metadata = this.getMetadata(node);
+    const metadata = Tree.getMetadata(node);
     fail.assertNotNull(
       !metadata.treeItem,
       "Can not update decorations on node which have not called getTreeItem yet",
@@ -165,7 +178,7 @@ export class Tree<T extends TreeNode<T>>
       return;
     }
     yield root;
-    for (const child of this.getMetadata(root).children ?? [])
+    for (const child of Tree.getMetadata(root).children ?? [])
       for (const node of this.iterateNodes(child)) yield node;
   }
 
@@ -175,7 +188,7 @@ export class Tree<T extends TreeNode<T>>
   }
 
   private clearMetadata(node: T, recursive: boolean) {
-    const metadata = this.getMetadata(node);
+    const metadata = Tree.getMetadata(node);
     if (recursive && metadata.children)
       metadata.children.forEach((child) => this.clearMetadata(child, recursive));
     metadata.treeItem = undefined;
@@ -183,7 +196,7 @@ export class Tree<T extends TreeNode<T>>
     metadata.decorations = undefined;
   }
 
-  private getMetadata(node: T) {
+  private static getMetadata<T>(node: T) {
     // the idiomatic way here is to use WeakMap
     // but embedding metadata in the node makes debugging easier
     return objectGetOrSetProperty(node, "__tree", () => ({}) as TreeNodeMetadata<T>);
@@ -191,6 +204,10 @@ export class Tree<T extends TreeNode<T>>
 
   private onDidChangeSelection(event: vscode.TreeViewSelectionChangeEvent<T>) {
     for (const selected of event.selection) if (selected.onSelected) selected.onSelected();
+  }
+
+  static getResourceUri<T extends TreeNode<T>>(node: T) {
+    return Tree.getMetadata(node).treeItem?.resourceUri;
   }
 
   /*
@@ -201,7 +218,7 @@ export class Tree<T extends TreeNode<T>>
   getTreeItem(node: T) {
     return reportErrorsAndRethrow(
       async () => {
-        const metadata = this.getMetadata(node);
+        const metadata = Tree.getMetadata(node);
         if (metadata.treeItem) return metadata.treeItem;
         const treeItem = await node.getTreeItem();
         // if available, copy static property viewItemId from node class so that
@@ -218,28 +235,25 @@ export class Tree<T extends TreeNode<T>>
           }
         }
 
-        if (node.getUriPathSegments) {
+        const pathSegments = normalizeArray(node.getUriPathSegments?.());
+        if (pathSegments.length > 0) {
           assert(
             treeItem.resourceUri === undefined,
-            `Node defines both treeItem and ${node.getUriPathSegments.name}`,
+            `Node defines both TreeItem.resourceUri and path segments`,
             node,
           );
           fail.assertNotNull(
             metadata.parent,
-            `Node defines ${node.getUriPathSegments.name} but has no parent`,
+            `Node only defines path segments but has no parent`,
             node,
           );
-          const parentUri = this.getMetadata(metadata.parent).treeItem?.resourceUri;
+          const parentUri = Tree.getMetadata(metadata.parent).treeItem?.resourceUri;
           fail.assertNotNull(
             parentUri,
-            `Node defines ${node.getUriPathSegments.name} but parent node does not provide resourceUri`,
+            `Node only defines path segments but parent node does not provide resourceUri`,
             node,
           );
-          const segments = node.getUriPathSegments();
-          treeItem.resourceUri = URI.appendPath(
-            parentUri,
-            ...(typeof segments === "string" ? [segments] : segments),
-          );
+          treeItem.resourceUri = URI.appendPath(parentUri, ...pathSegments);
         }
 
         metadata.treeItem = treeItem;
@@ -263,7 +277,7 @@ export class Tree<T extends TreeNode<T>>
 
   async getChildren(node?: T) {
     if (node) {
-      const metadata = this.getMetadata(node);
+      const metadata = Tree.getMetadata(node);
       if (metadata.children) return metadata.children;
     }
 
@@ -275,10 +289,10 @@ export class Tree<T extends TreeNode<T>>
           }
           return this.data;
         }
-        const metadata = this.getMetadata(node);
+        const metadata = Tree.getMetadata(node);
         metadata.children = node.getChildren ? await node.getChildren() : undefined;
         if (metadata.children)
-          for (const child of metadata.children) this.getMetadata(child).parent = node;
+          for (const child of metadata.children) Tree.getMetadata(child).parent = node;
         return metadata.children;
       },
       { prefix: "getChildren failed: " },
@@ -286,7 +300,7 @@ export class Tree<T extends TreeNode<T>>
   }
 
   getParent(node: T): T | undefined {
-    return this.getMetadata(node).parent;
+    return Tree.getMetadata(node).parent;
   }
 
   async resolveTreeItem(treeItem: vscode.TreeItem, node: T, _: vscode.CancellationToken) {
@@ -327,7 +341,7 @@ export class Tree<T extends TreeNode<T>>
       const node = sources[0];
       if (!node.onDrag) return;
       if (!node.onDrag()) return;
-      const md = this.getMetadata(node);
+      const md = Tree.getMetadata(node);
       fail.assertNotNull(md.treeItem);
       fail.assertNotNull(md.treeItem.resourceUri, "Dragged node has no resourceUri");
       this.logger.debug(`Dragging node`, sources[0], node);
@@ -350,7 +364,7 @@ export class Tree<T extends TreeNode<T>>
       const sourceUri = dtItem.value as string;
       const source = this.findFirstNode(
         (node) =>
-          this.getMetadata(node).treeItem?.resourceUri?.toString(true /* skipEncoding */) ===
+          Tree.getMetadata(node).treeItem?.resourceUri?.toString(true /* skipEncoding */) ===
           sourceUri,
       );
       fail.assertNotNull(source, "Can not find dragged node with uri", sourceUri);
