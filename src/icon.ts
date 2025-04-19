@@ -1,5 +1,6 @@
 import { assertNotNull } from "@sergei-dyshel/typescript/error";
 import * as vscode from "vscode";
+import { ExtensionContext } from "./extension-context";
 
 export class Icon {
   readonly themeIcon: vscode.ThemeIcon;
@@ -67,6 +68,9 @@ export namespace BuiltinIcon {
   export const COPY = new Icon("copy");
   export const MERGE = new Icon("merge");
   export const CIRCLE_SLASH = new Icon("circle-slash");
+  export const REACTIONS = new Icon("reactions");
+  export const THUMBS_UP = new Icon("thumbsup");
+  export const THUMBS_DOWN = new Icon("thumbsdown");
 }
 
 export class FontIcon extends Icon {
@@ -126,4 +130,17 @@ export function generateFontIconsContribution(fontPath: string, icons: Record<st
     };
   }
   return result;
+}
+
+/**
+ * Icon stored in some resources dir.
+ *
+ * Can be used in both package.json and dynamically (via {@link ResourceIcon.uri}).
+ */
+export class ResourceIcon {
+  constructor(readonly path: string) {}
+
+  get uri() {
+    return ExtensionContext.get().asAbsolutePath(this.path);
+  }
 }

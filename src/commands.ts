@@ -16,7 +16,7 @@ import { registerCommand } from "@sergei-dyshel/vscode/error-handling";
 import "reflect-metadata";
 import type * as vscode from "vscode";
 import { ExtensionContext } from "./extension-context";
-import { Icon } from "./icon";
+import { Icon, ResourceIcon } from "./icon";
 import { When } from "./when";
 
 // REFACTOR: move this file to library, add function to set prefix
@@ -49,7 +49,7 @@ export interface MenuCommand {
 export interface BaseCommand {
   command: string;
   title: string;
-  icon?: Icon;
+  icon?: Icon | ResourceIcon;
 }
 
 interface Command extends BaseCommand {
@@ -431,7 +431,9 @@ export function generatePackageJson() {
     icon: command.icon
       ? command.icon instanceof Icon
         ? command.icon.label
-        : command.icon
+        : command.icon instanceof ResourceIcon
+          ? command.icon.path
+          : command.icon
       : undefined,
   }));
   const commandPallete = allCommands
