@@ -1,3 +1,6 @@
+/**
+ * @file Infrastructure for declaring and defining VScode commands using decorators
+ */
 import { Dataclass, type DataclassParams } from "@sergei-dyshel/typescript";
 import { defaultCompare } from "@sergei-dyshel/typescript/array";
 import {
@@ -18,6 +21,7 @@ import { When } from "./when";
 
 // REFACTOR: move this file to library, add function to set prefix
 
+/** Symbol to store class's static metdata needed for commands */
 export const METADATA = Symbol("qcfg-js-vscode/commands/metadata");
 
 type Menu = ValueOf<typeof Menu>;
@@ -139,10 +143,7 @@ export function makeMetadata(metadata: DataclassParams<Metadata>) {
   return Metadata.create(metadata);
 }
 
-/**
- * @param base
- * @param metadata
- */
+/** Inherit metadata from another class. */
 export function inheritMetadata(
   base: Function & { prototype: any },
   metadata?: DataclassParams<Metadata>,

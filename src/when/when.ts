@@ -195,7 +195,10 @@ export const CommentThread = {
   CAN_UNRESOLVE: "canUnresolve",
   CAN_FLAG: "canFlag",
   CAN_UNFLAG: "canUnflag",
+  // REFACTOR: these are crux extension-specific, move there
   IS_TOP: "isTop",
+  IS_COMMIT_MESSAGE: "isCommitMessage",
+  IS_FILE: "isFile",
 } as const;
 
 export type Comment = ValueOf<typeof Comment>;
