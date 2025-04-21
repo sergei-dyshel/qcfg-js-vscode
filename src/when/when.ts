@@ -205,6 +205,8 @@ export type Comment = ValueOf<typeof Comment>;
 
 export const Comment = {
   CAN_EDIT: "canEdit",
+  CAN_UPVOTE: "canUpvote",
+  CAN_REMOVE_UPVOTE: "canRemoveUpvote",
 } as const;
 
 export function Flags<T extends string>(flags: Record<T, boolean>) {
