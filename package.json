@@ -41,6 +41,7 @@
     "@sergei-dyshel/eslint-config": "*",
     "@sergei-dyshel/prettier-config": "*",
     "@types/node": "^20.8.1",
-    "@types/vscode": "1.90.0"
+    "@types/vscode": "1.90.0",
+    "semver": "^7.7.1"
   }
 }
