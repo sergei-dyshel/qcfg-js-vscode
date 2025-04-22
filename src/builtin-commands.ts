@@ -52,3 +52,19 @@ export function openMultiDiffEditor(
   const resourceTuples = resources.map((r) => [r.resource, r.original, r.modified]);
   return commands.executeCommand("vscode.changes", title, resourceTuples);
 }
+
+export function restartExtensionHost() {
+  return commands.executeCommand("workbench.action.restartExtensionHost");
+}
+
+export function reloadWindow() {
+  return commands.executeCommand("workbench.action.reloadWindow");
+}
+
+export function quitVscode() {
+  return commands.executeCommand("workbench.action.quit");
+}
+
+export function closeActiveEditor() {
+  return commands.executeCommand("workbench.action.closeActiveEditor");
+}

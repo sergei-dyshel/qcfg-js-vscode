@@ -1,4 +1,5 @@
 import { AbortError } from "@sergei-dyshel/typescript/error";
+import type { Awaitable } from "@sergei-dyshel/typescript/types";
 import type { Config } from "@sergei-dyshel/vscode/config";
 import { window, type MessageOptions } from "vscode";
 
@@ -23,12 +24,30 @@ export function show(severity: Severity, message: string) {
   void showImpl(severity, message, {});
 }
 
+export function showModal(severity: Severity, message: string, detail?: string) {
+  return showImpl(severity, message, { modal: true, detail });
+}
+
 export function ask<T extends readonly string[]>(
   severity: Severity,
   message: string,
   ...items: T
 ): Thenable<(typeof items)[number] | undefined> {
   return showImpl(severity, message, {}, ...items);
+}
+
+/**
+ * Show message with button, execute callback depending on button pressed
+ */
+export async function select<T>(
+  severity: Severity,
+  message: string,
+  ...items: [item: string, callback: () => Awaitable<T>][]
+): Promise<T | undefined> {
+  const answer = await ask(severity, message, ...items.map(([item]) => item));
+  if (!answer) return;
+  const [_, callback] = items.find(([item]) => item === answer)!;
+  return await callback();
 }
 
 export function askModal<T extends readonly string[]>(
