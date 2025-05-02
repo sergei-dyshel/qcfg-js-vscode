@@ -71,6 +71,7 @@ export namespace BuiltinIcon {
   export const REACTIONS = new Icon("reactions");
   export const THUMBS_UP = new Icon("thumbsup");
   export const THUMBS_DOWN = new Icon("thumbsdown");
+  export const BEAKER = new Icon("beaker");
 }
 
 export class FontIcon extends Icon {
