@@ -36,9 +36,9 @@ const logger = new ModuleLogger({ parent: libraryLogger });
  *
  * For better type safety can be parametrized by node type (but not required).
  */
-export interface TreeNode<T = unknown> {
+export interface TreeNode {
   /** Same as {@link TreeDataProvider.getChildren} */
-  getChildren?(): Awaitable<T[]> | undefined;
+  getChildren?(): Awaitable<TreeNode[]> | undefined;
   /**
    * Same as {@link TreeDataProvider.getTreeItem}
    *
@@ -61,7 +61,7 @@ export interface TreeNode<T = unknown> {
    *
    * NOTE: dropping other items is not supported
    */
-  onDrop?(source: T): void | Promise<void>;
+  onDrop?(source: TreeNode): void | Promise<void>;
   /** @returns Object where keys are decoration names provided in {@link Tree.createView} */
   getDecorations?(): Record<string, FileDecoration | undefined> | undefined;
   /**
@@ -84,7 +84,14 @@ export interface TreeNode<T = unknown> {
   }>;
 }
 
-export class Tree<T extends TreeNode<T>>
+/**
+ * Integration of {@link TreeNode} with VScode's APIs ({@link TreeDataProvider} and
+ * ${@link TreeDragAndDropController}).
+ *
+ * @template T Optional type which can be union of all node types used in the tree. NOTE: since
+ *   TreeNode is not templated, there is no type-checking for that.}
+ */
+export class Tree<T extends TreeNode = TreeNode>
   extends DisposableContainer
   implements TreeDataProvider<T>, TreeDragAndDropController<T>
 {
@@ -219,7 +226,7 @@ export class Tree<T extends TreeNode<T>>
     return undefined;
   }
 
-  static getTree<T extends TreeNode<T>>(node: T) {
+  static getTree<T extends TreeNode>(node: T) {
     return this.getMetadata(node).tree;
   }
 
@@ -238,7 +245,7 @@ export class Tree<T extends TreeNode<T>>
     return objectGetOrSetProperty(node, "__tree", () => new TreeNodeMetadata<T>(this));
   }
 
-  private static getMetadata<T extends TreeNode<T>>(node: T) {
+  private static getMetadata<T extends TreeNode>(node: T) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const metadata = (node as any).__tree as TreeNodeMetadata<T>;
     fail.assertNotNull(metadata, "Node does not have metadata yet");
@@ -331,7 +338,7 @@ export class Tree<T extends TreeNode<T>>
     )();
   }
 
-  async getChildren(node?: T) {
+  async getChildren(node?: T): Promise<T[] | undefined> {
     if (node) {
       const metadata = this.getMetadata(node);
       if (metadata.children) return metadata.children;
@@ -346,7 +353,7 @@ export class Tree<T extends TreeNode<T>>
           return this.data;
         }
         const metadata = this.getMetadata(node);
-        metadata.children = node.getChildren ? await node.getChildren() : undefined;
+        metadata.children = node.getChildren ? ((await node.getChildren()) as T[]) : undefined;
         if (metadata.children)
           for (const child of metadata.children) this.getMetadata(child).parent = node;
         return metadata.children;
@@ -430,7 +437,7 @@ export class Tree<T extends TreeNode<T>>
   }
 }
 
-class TreeNodeMetadata<T extends TreeNode<T>> {
+class TreeNodeMetadata<T extends TreeNode> {
   constructor(readonly tree: Tree<T>) {}
   treeItem?: TreeItem;
   children?: T[];
