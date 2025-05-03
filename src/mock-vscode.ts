@@ -15,7 +15,11 @@ export namespace workspace {
   export const fs = undefined;
 }
 
-export class Uri {}
+export class Uri {
+  static from(..._args: any[]) {
+    return undefined;
+  }
+}
 
 export namespace window {}
 
@@ -90,3 +94,8 @@ export class CallHierarchyItem {}
 export class TypeHierarchyItem {}
 
 export enum SymbolKind {}
+
+export enum TreeItemCheckboxState {
+  Checked,
+  Unchecked,
+}
