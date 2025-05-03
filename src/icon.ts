@@ -72,6 +72,8 @@ export namespace BuiltinIcon {
   export const THUMBS_UP = new Icon("thumbsup");
   export const THUMBS_DOWN = new Icon("thumbsdown");
   export const BEAKER = new Icon("beaker");
+  export const SAVE = new Icon("save");
+  export const FILTER = new Icon("filter");
 }
 
 export class FontIcon extends Icon {
@@ -136,12 +138,16 @@ export function generateFontIconsContribution(fontPath: string, icons: Record<st
 /**
  * Icon stored in some resources dir.
  *
- * Can be used in both package.json and dynamically (via {@link ResourceIcon.uri}).
+ * Can be used in both package.json and dynamically (via {@link ResourceIcon.absPath}).
  */
 export class ResourceIcon {
   constructor(readonly path: string) {}
 
-  get uri() {
+  get absPath() {
     return ExtensionContext.get().asAbsolutePath(this.path);
+  }
+
+  get uri() {
+    return vscode.Uri.file(this.absPath);
   }
 }
