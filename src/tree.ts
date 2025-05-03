@@ -1,10 +1,9 @@
 import { InstanceLogger, type Logger, ModuleLogger } from "@sergei-dyshel/node/logging";
 import { DisposableContainer } from "@sergei-dyshel/typescript";
 import { mapAsync, normalizeArray } from "@sergei-dyshel/typescript/array";
-import * as fail from "@sergei-dyshel/typescript/error";
-import { assert } from "@sergei-dyshel/typescript/error";
+import { assert, assertNotNull, LoggableError } from "@sergei-dyshel/typescript/error";
 import { objectGetOrSetProperty } from "@sergei-dyshel/typescript/object";
-import type { Arrayable, Awaitable } from "@sergei-dyshel/typescript/types";
+import type { Arrayable, Awaitable, WithRequired } from "@sergei-dyshel/typescript/types";
 import {
   type CancellationToken,
   type Command,
@@ -16,7 +15,7 @@ import {
   type TreeCheckboxChangeEvent,
   type TreeDataProvider,
   type TreeDragAndDropController,
-  type TreeItem,
+  TreeItem,
   TreeItemCheckboxState,
   TreeItemCollapsibleState,
   type TreeView,
@@ -63,7 +62,7 @@ export interface TreeNode {
    */
   onDrop?(source: TreeNode): void | Promise<void>;
   /** @returns Object where keys are decoration names provided in {@link Tree.createView} */
-  getDecorations?(): Record<string, FileDecoration | undefined> | undefined;
+  getDecorations?(): Tree.Decorations | undefined;
   /**
    * When parent node provides {@link TreeItem.resourceUri}, construct this node's resourceUri by
    * appending these segments to path.
@@ -82,6 +81,160 @@ export interface TreeNode {
     tooltip?: string | MarkdownString;
     command?: Command;
   }>;
+}
+
+interface StaticTreeNodeParams {
+  treeItem: TreeItem;
+  children?: TreeNode[];
+  pathSegments?: Arrayable<string>;
+  decorations?: Tree.Decorations;
+}
+
+/**
+ * Convenience class to quickly define TreeNode that never changes by providing all callback's
+ * results as parameters.
+ *
+ * NODE: for node with checkboxes use {@link StaticCheckBoxTreeNode}
+ */
+export class StaticTreeNode implements TreeNode {
+  readonly treeItem: TreeItem;
+  readonly children?: TreeNode[];
+  readonly pathSegments?: Arrayable<string>;
+
+  getChecked?: TreeNode["getChecked"];
+  getChildren?: TreeNode["getChildren"];
+  getDecorations?: TreeNode["getDecorations"];
+
+  constructor(params: StaticTreeNodeParams) {
+    this.treeItem = params.treeItem;
+    this.pathSegments = params.pathSegments;
+    if (params.children) {
+      this.children = params.children;
+      this.getChildren = function (this: StaticTreeNode) {
+        return this.children;
+      };
+    }
+    if (params.decorations) {
+      this.getDecorations = function (this: StaticTreeNode) {
+        return params.decorations;
+      };
+    }
+  }
+
+  getTreeItem() {
+    return this.treeItem;
+  }
+
+  getUriPathSegments() {
+    return this.pathSegments;
+  }
+}
+
+/**
+ * Like {@link StaticTreeNode} but with checkbox.
+ */
+export class StaticCheckBoxTreeNode extends StaticTreeNode {
+  onChecked: TreeNode["onChecked"];
+
+  constructor(params: StaticTreeNodeParams & { checked: boolean } & Pick<TreeNode, "onChecked">) {
+    super(params);
+    this.checked = params.checked;
+    this.onChecked = params.onChecked;
+  }
+
+  get checked() {
+    return this.treeItem.checkboxState === TreeItemCheckboxState.Checked;
+  }
+
+  set checked(state: boolean) {
+    this.treeItem.checkboxState = state
+      ? TreeItemCheckboxState.Checked
+      : TreeItemCheckboxState.Unchecked;
+  }
+}
+
+export function newTreeItem(
+  params: (WithRequired<TreeItem, "label"> | WithRequired<TreeItem, "resourceUri">) & {
+    /** Shortcut for setting {@link TreeItem.collapsibleState} */
+    expanded?: boolean;
+  },
+) {
+  const treeItem = params.label ? new TreeItem(params.label) : new TreeItem(params.resourceUri!);
+  treeItem.id = params.id;
+  treeItem.resourceUri = params.resourceUri;
+  treeItem.command = params.command;
+  treeItem.iconPath = params.iconPath;
+  treeItem.checkboxState = params.checkboxState;
+  treeItem.tooltip = params.tooltip;
+  treeItem.description = params.description;
+  treeItem.contextValue = params.contextValue;
+  treeItem.collapsibleState =
+    params.expanded !== undefined
+      ? params.expanded
+        ? Tree.EXPANDED
+        : Tree.COLLAPSED
+      : params.collapsibleState;
+  return treeItem;
+}
+
+export class RadioBoxGroup<T extends TreeNode> {
+  readonly nodes: T[] = [];
+
+  private checked_: T;
+
+  /**
+   * @param checked Initially checked node, by default first one.
+   */
+  constructor(nodes: T[], checked?: T) {
+    assert(nodes.length > 0, "RadioBoxGroup created with no nodes");
+    this.checked_ = checked ?? nodes[0];
+    assert(nodes.includes(this.checked_), "Default checked nodoe is not in the list");
+    for (const node of nodes) this.add(node);
+  }
+
+  get checked() {
+    return this.checked_;
+  }
+
+  set checked(node: T) {
+    assert(this.nodes.includes(node), "Trying to check node that is not in the list");
+    if (this.checked === node) return;
+    const prev = this.checked;
+    this.checked_ = node;
+
+    // update will call onChecked which will provide updated value
+    Tree.dataChanged(prev);
+    Tree.dataChanged(node);
+  }
+
+  /**
+   * Called when currently checked item changes.
+   *
+   * To be overriden in subclasses.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  onChecked(_node: T) {}
+
+  private add(node: T) {
+    this.nodes.push(node);
+    assert(node.onChecked === undefined, "Should not define onChecked callback on RadioBoxNode");
+    assert(node.getChecked === undefined, "Should not define getChecked callback on RadioBoxNode");
+
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const group = this;
+    node.getChecked = function (this: T) {
+      return group.checked == this;
+    };
+    node.onChecked = function (this: T, checked: boolean) {
+      if (this === group.checked) {
+        // if user tried to uncheck currently checked node, check it back by emitting changed event
+        if (!checked) Tree.dataChanged(this);
+      } else {
+        group.checked = this;
+        group.onChecked(this);
+      }
+    };
+  }
 }
 
 /**
@@ -111,11 +264,15 @@ export class Tree<T extends TreeNode = TreeNode>
   static readonly EXPANDED = TreeItemCollapsibleState.Expanded;
   static readonly COLLAPSED = TreeItemCollapsibleState.Collapsed;
 
-  getData() {
+  async getData(): Promise<T[]> {
+    if (this.promise) return await this.promise;
     return this.data;
   }
 
-  createView(viewId: string, options?: { allowDragAndDrop?: boolean; decorationNames?: string[] }) {
+  createView(
+    viewId: string,
+    options?: { allowDragAndDrop?: boolean; decorationNames?: readonly string[] },
+  ) {
     this.viewId = viewId;
     this.logger = new InstanceLogger(viewId, { parent: logger });
     this.treeView = window.createTreeView<T>(viewId, {
@@ -138,15 +295,15 @@ export class Tree<T extends TreeNode = TreeNode>
         ...options.decorationNames.map((name) =>
           window.registerFileDecorationProvider({
             onDidChangeFileDecorations: this.decorationChangeEmitter.event,
-            provideFileDecoration: (uri: Uri, _token: CancellationToken) => {
-              const node = this.findFirstNode((node) => {
+            provideFileDecoration: async (uri: Uri, _token: CancellationToken) => {
+              const node = await this.findFirstNode((node) => {
                 const resourceUri = this.getMetadata(node).treeItem?.resourceUri;
                 return resourceUri ? URI.equals(uri, resourceUri) : false;
               });
               if (!node) return;
               const metadata = this.getMetadata(node);
               if (!metadata.decorations && node.getDecorations) {
-                metadata.decorations = node.getDecorations();
+                metadata.decorations = node.getDecorations() ?? {};
                 for (const name in metadata.decorations)
                   assert(
                     options.decorationNames!.includes(name),
@@ -195,13 +352,17 @@ export class Tree<T extends TreeNode = TreeNode>
     this.onChangeEmitter.fire(node);
   }
 
+  static dataChanged<T extends TreeNode>(node: T) {
+    this.getTree(node).dataChanged(node);
+  }
+
   updateDecorations(node: T, propogateToParent = false) {
     const metadata = this.getMetadata(node);
-    fail.assertNotNull(
+    assertNotNull(
       !metadata.treeItem,
       "Can not update decorations on node which have not called getTreeItem yet",
     );
-    fail.assertNotNull(
+    assertNotNull(
       !metadata.treeItem?.resourceUri,
       "Can not update decorations on node that does not provide resourceUri",
     );
@@ -211,21 +372,27 @@ export class Tree<T extends TreeNode = TreeNode>
       this.updateDecorations(metadata.parent, propogateToParent);
   }
 
-  *iterateNodes(root?: T): IterableIterator<T> {
+  async *iterateNodes(root?: T): AsyncIterableIterator<T> {
     if (!root) {
-      for (const root of this.data) for (const node of this.iterateNodes(root)) yield node;
+      for (const root of await this.getData())
+        for await (const node of this.iterateNodes(root)) yield node;
       return;
     }
     yield root;
-    for (const child of this.getMetadata(root).children ?? [])
-      for (const node of this.iterateNodes(child)) yield node;
+    for (const child of (await this.getChildren(root)) ?? [])
+      for await (const node of this.iterateNodes(child)) yield node;
   }
 
-  findFirstNode(condition: (_: T) => boolean, root?: T) {
-    for (const node of this.iterateNodes(root)) if (condition(node)) return node;
+  async findFirstNode(condition: (_: T) => boolean, root?: T) {
+    for await (const node of this.iterateNodes(root)) if (condition(node)) return node;
     return undefined;
   }
 
+  /**
+   * Get {@link Tree} of node, recorded in in its metadata.
+   *
+   * Prefer to use Tree object directly (from code context) instead of this function.
+   */
   static getTree<T extends TreeNode>(node: T) {
     return this.getMetadata(node).tree;
   }
@@ -248,7 +415,7 @@ export class Tree<T extends TreeNode = TreeNode>
   private static getMetadata<T extends TreeNode>(node: T) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const metadata = (node as any).__tree as TreeNodeMetadata<T>;
-    fail.assertNotNull(metadata, "Node does not have metadata yet");
+    assertNotNull(metadata, "Node does not have metadata yet", node);
     return metadata;
   }
 
@@ -297,35 +464,40 @@ export class Tree<T extends TreeNode = TreeNode>
           }
         }
 
-        const parent = metadata.parent ? this.getMetadata(metadata.parent).treeItem : undefined;
+        const parentTreeItem = metadata.parent
+          ? await this.getTreeItem(metadata.parent)
+          : undefined;
         const pathSegments = normalizeArray(node.getUriPathSegments?.());
         if (pathSegments.length > 0) {
-          assert(
-            treeItem.resourceUri === undefined,
-            `Node defines both TreeItem.resourceUri and path segments`,
-            node,
-          );
-          fail.assertNotNull(
-            metadata.parent,
-            `Node only defines path segments but has no parent`,
-            node,
-          );
-          const parentUri = parent?.resourceUri;
-          fail.assertNotNull(
-            parentUri,
-            `Node only defines path segments but parent node does not provide resourceUri`,
-            node,
-          );
-          treeItem.resourceUri = URI.appendPath(parentUri, ...pathSegments);
+          assertNotNull(metadata.parent, `Node only defines path segments but has no parent`, node);
+          const parentUri = parentTreeItem?.resourceUri;
+          if (!parentUri)
+            throw new LoggableError(
+              `Node only defines path segments but parent node does not provide resourceUri`,
+              { data: [node] },
+            );
+          const resourceId = URI.appendPath(parentUri, ...pathSegments);
+          // usually user should not define both treeItem.resourceId and getUriPathSegments
+          // but in certain cases like StaticTreeNode resourceId will be calculated and filled into treeItem
+          if (treeItem.resourceUri) {
+            assert(
+              URI.equals(treeItem.resourceUri, resourceId),
+              `Static TreeItem.resourceUri does not match one calculated with getUriPathSegments`,
+              treeItem,
+              resourceId,
+            );
+          }
+          treeItem.resourceUri = resourceId;
         }
 
         metadata.treeItem = treeItem;
 
         if (node.getDecorations) {
           const uri = treeItem.resourceUri;
-          fail.assertNotNull(
+          assertNotNull(
             uri,
-            `Can not have ${node.getDecorations.name} defined on node which doesn't provide resourceUri`,
+            `Can not have getDecorations defined on node which doesn't provide resourceUri`,
+            node,
           );
           this.decorationChangeEmitter.fire(uri);
         }
@@ -353,9 +525,8 @@ export class Tree<T extends TreeNode = TreeNode>
           return this.data;
         }
         const metadata = this.getMetadata(node);
-        metadata.children = node.getChildren ? ((await node.getChildren()) as T[]) : undefined;
-        if (metadata.children)
-          for (const child of metadata.children) this.getMetadata(child).parent = node;
+        metadata.children = ((await node.getChildren?.()) ?? []) as T[];
+        for (const child of metadata.children) this.getMetadata(child).parent = node;
         return metadata.children;
       },
       { prefix: "getChildren failed: " },
@@ -401,8 +572,8 @@ export class Tree<T extends TreeNode = TreeNode>
       if (!node.onDrag) return;
       if (!node.onDrag()) return;
       const md = this.getMetadata(node);
-      fail.assertNotNull(md.treeItem);
-      fail.assertNotNull(md.treeItem.resourceUri, "Dragged node has no resourceUri");
+      assertNotNull(md.treeItem);
+      assertNotNull(md.treeItem.resourceUri, "Dragged node has no resourceUri");
       this.logger.debug(`Dragging node`, sources[0], node);
       // DataTrasfer values must be JSON objects
       dataTransfer.set(
@@ -415,14 +586,14 @@ export class Tree<T extends TreeNode = TreeNode>
   async handleDrop(target: T | undefined, dataTransfer: DataTransfer, _token: CancellationToken) {
     return reportErrorsNoRethrow(async () => {
       const dtItem = dataTransfer.get(this.mimeType);
-      fail.assertNotNull(dtItem, `No DataTransferItem for tree's MIME type`);
+      assertNotNull(dtItem, `No DataTransferItem for tree's MIME type`);
       const sourceUri = dtItem.value as string;
-      const source = this.findFirstNode(
+      const source = await this.findFirstNode(
         (node) =>
           this.getMetadata(node).treeItem?.resourceUri?.toString(true /* skipEncoding */) ===
           sourceUri,
       );
-      fail.assertNotNull(source, "Can not find dragged node with uri", sourceUri);
+      assertNotNull(source, "Can not find dragged node with uri", sourceUri);
       if (!target) {
         this.logger.debug(`Tree view ${this.viewId}: dropping outside`, source);
         return;
@@ -435,6 +606,26 @@ export class Tree<T extends TreeNode = TreeNode>
       this.logger.debug(`onDrop not implemented`, target);
     })();
   }
+}
+
+export namespace Tree {
+  /**
+   * Instantiate this type with elements of array provided to {@link Tree.createView}
+   *
+   * Example:
+   *
+   *     const decorationNames = ["a", "b"] as const;
+   *     tree.createView("id", { decorationNames });
+   *     type Decorations = Tree.Decorations<(typeof decorationNames)[number]>;
+   *     class Node implements TreeNode {
+   *       getDecorations(): Decorations {
+   *         return { a: new FileDecoration("A"), b: undefined };
+   *       }
+   *     }
+   */
+  export type Decorations<T extends string = string> = Partial<
+    Record<T, FileDecoration | undefined>
+  >;
 }
 
 class TreeNodeMetadata<T extends TreeNode> {
