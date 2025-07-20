@@ -21,8 +21,10 @@ vscode-package-next:
     just vscode-package $ver
     git tag v$ver
 
+install_extension := env('QCFG_JS_VSCODE_INSTALL_EXTENSION', 'code --force --install-extension')
+
 vscode-install ver:
-    code --force --install-extension=$(jq -r '(.name) + "-{{ver}}"' package.json).vsix
+    {{install_extension}} $(jq -r '(.name) + "-{{ver}}"' package.json).vsix
 
 vscode-install-latest:
     just vscode-install $(just semver-latest)
