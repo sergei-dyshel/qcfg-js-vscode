@@ -1,3 +1,6 @@
+dts:
+    npx @vscode/dts dev
+
 [private]
 semver-latest:
     #!/usr/bin/env bash
@@ -30,3 +33,12 @@ vscode-install-latest:
     just vscode-install $(just semver-latest)
 
 vscode-package-and-install-next: vscode-package-next vscode-install-latest
+
+vscode-package-dev:
+    just vscode-package 0.0.0-dev
+
+vscode-install-dev:
+    just vscode-install 0.0.0-dev
+
+vscode-package-and-install-dev: vscode-package-dev vscode-install-dev
+
