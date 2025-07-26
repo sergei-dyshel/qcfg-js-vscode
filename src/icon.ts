@@ -74,6 +74,7 @@ export namespace BuiltinIcon {
   export const BEAKER = new Icon("beaker");
   export const SAVE = new Icon("save");
   export const FILTER = new Icon("filter");
+  export const FOLDER_LIBRARY = new Icon("folder-library");
 }
 
 export class FontIcon extends Icon {
