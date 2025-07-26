@@ -1,6 +1,7 @@
 import { ModuleLogger } from "@sergei-dyshel/node/logging";
+import { assertNotNull } from "@sergei-dyshel/typescript/error";
 import { expandTemplate } from "@sergei-dyshel/typescript/string";
-import { workspace } from "vscode";
+import { window, workspace, type TextEditor } from "vscode";
 import { getWorkspaceRoot, getWorkspaceRootName } from "./workspace";
 
 const WINDOW_TITLE = "window.title";
@@ -36,4 +37,9 @@ function expandTitle(root: string, title: string): string {
     logger.error(`Could not expand window title "${title}: ${String(err)}`);
     return rootName;
   }
+}
+export function getActiveTextEditor(): TextEditor {
+  const editor = window.activeTextEditor;
+  assertNotNull(editor, "No active text editor");
+  return editor;
 }

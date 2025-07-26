@@ -1,4 +1,3 @@
-import { assertNotNull } from "@sergei-dyshel/typescript/error";
 import type { AnyFunction } from "@sergei-dyshel/typescript/types";
 import { zod } from "@sergei-dyshel/typescript/zod";
 import { registerCommand } from "@sergei-dyshel/vscode/error-handling";
@@ -10,7 +9,6 @@ import {
   TaskRevealKind,
   TaskScope,
   tasks,
-  window,
   type CancellationToken,
 } from "vscode";
 import { UriFactory } from "./uri-factory";
@@ -26,12 +24,6 @@ export function cancellationTokenToAbortSignal(token?: CancellationToken): Abort
       controller.abort();
     });
   return controller.signal;
-}
-
-export function getActiveTextEditor() {
-  const editor = window.activeTextEditor;
-  assertNotNull(editor, "Not in text editor");
-  return editor;
 }
 
 export async function runInTerminal(

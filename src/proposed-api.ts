@@ -7,8 +7,8 @@ import { closeActiveEditor } from "./builtin-commands";
 import { documentRange } from "./document";
 import { ExtensionContext } from "./extension-context";
 import { Extensions } from "./extensions";
-import { getActiveTextEditor } from "./misc";
 import { Message } from "./namespaces/message";
+import { getActiveTextEditor } from "./window";
 
 export namespace ProposedApi {
   /**
