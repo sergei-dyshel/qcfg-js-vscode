@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Personal library for VScode extensions",
   "main": "src/index.ts",
+  "enabledApiProposals": [
+    "resolvers"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./tsconfig.json": "./tsconfig.json",
