@@ -1,3 +1,4 @@
+export * from "./disposable";
 export * from "./extension-context";
 export * from "./extensions";
 export * from "./misc";
