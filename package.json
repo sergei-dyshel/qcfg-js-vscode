@@ -4,6 +4,7 @@
   "description": "Personal library for VScode extensions",
   "main": "src/index.ts",
   "enabledApiProposals": [
+    "quickPickSortByLabel",
     "resolvers"
   ],
   "exports": {
