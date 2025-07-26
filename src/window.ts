@@ -1,7 +1,14 @@
 import { ModuleLogger } from "@sergei-dyshel/node/logging";
 import { assertNotNull } from "@sergei-dyshel/typescript/error";
 import { expandTemplate } from "@sergei-dyshel/typescript/string";
-import { window, workspace, type TextEditor } from "vscode";
+import {
+  Uri,
+  window,
+  workspace,
+  type TextDocument,
+  type TextDocumentShowOptions,
+  type TextEditor,
+} from "vscode";
 import { getWorkspaceRoot, getWorkspaceRootName } from "./workspace";
 
 const WINDOW_TITLE = "window.title";
@@ -38,8 +45,38 @@ function expandTitle(root: string, title: string): string {
     return rootName;
   }
 }
+
 export function getActiveTextEditor(): TextEditor {
   const editor = window.activeTextEditor;
   assertNotNull(editor, "No active text editor");
   return editor;
 }
+
+/**
+ * Safe version of {@link window.showTextDocument}.
+ *
+ * When function is called repeately with overlapping invokation, the call may fail because another
+ * editor is being open at the same time. If older invokation (not the most recent one) failed we
+ * just abort (return `undefined`). If newest invokation failed, we retry.
+ */
+export async function showTextDocument(
+  docOrUri: TextDocument | Uri,
+  options?: TextDocumentShowOptions,
+): Promise<TextEditor | undefined> {
+  // const column =
+  //   options?.viewColumn ?? window.tabGroups.activeTabGroup.viewColumn;
+  showTextDocumentGen += 1;
+  const gen = showTextDocumentGen;
+  try {
+    if (docOrUri instanceof Uri) return await window.showTextDocument(docOrUri, options);
+    return await window.showTextDocument(docOrUri, options);
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes("Could NOT open editor")) {
+      if (gen !== showTextDocumentGen) return undefined;
+      return showTextDocument(docOrUri, options);
+    }
+    throw err; // unrelated error
+  }
+}
+
+let showTextDocumentGen = 0;
