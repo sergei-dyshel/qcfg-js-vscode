@@ -1,7 +1,7 @@
 import type { PackageJson } from "@sergei-dyshel/node";
 import { exists, FileWatcher } from "@sergei-dyshel/node/filesystem";
 import { ModuleLogger } from "@sergei-dyshel/node/logging";
-import type { DisposableLike } from "@sergei-dyshel/typescript";
+import { escapeRegExp, type DisposableLike } from "@sergei-dyshel/typescript";
 import {
   filterNonNull,
   lessCompare,
@@ -11,7 +11,7 @@ import {
 import { readdir, readFile, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { clearTimeout, setTimeout } from "node:timers";
-import { type Extension, extensions } from "vscode";
+import { extensions, type Extension } from "vscode";
 import { reloadWindow, restartExtensionHost } from "./builtin-commands";
 import { ExtensionContext } from "./extension-context";
 import { Message } from "./namespaces/message";
@@ -89,7 +89,12 @@ export class ExtensionUpdateChecker implements DisposableLike {
     self.watcher.add(Extensions.listRoots());
     self.watcher.onAny((event, path) => {
       // filter out non-interesting updates
-      if ((event !== "change" && event !== "add") || !path.includes(extension.id)) return;
+      if (event !== "change" && event !== "add") return;
+
+      logger.debug(`Detected path ${event}: ${path}`);
+
+      const regexp = new RegExp(`${escapeRegExp(extension.id)}-\\d+\\.\\d+\\.\\d+`, "i");
+      if (!path.match(regexp)) return;
 
       if (self.timeout) clearTimeout(self.timeout);
       self.timeout = setTimeout(() => {
