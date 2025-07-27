@@ -4,6 +4,7 @@ export * from "./extensions";
 export * from "./misc";
 export { Commands } from "./namespaces/commands";
 export { Message } from "./namespaces/message";
+export * from "./package-json";
 export * from "./persistent-state";
 export { PersistentValue } from "./persistent-value";
 export * from "./position";
