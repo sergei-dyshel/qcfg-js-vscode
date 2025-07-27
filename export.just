@@ -4,7 +4,7 @@ dts:
 [private]
 semver-latest:
     #!/usr/bin/env bash
-    ver=$(git describe --match "v*" --abbrev=0 --tags $(git rev-list --tags --max-count=1))
+    ver=$(git tag --list "v*" | sort -V | tail -1)
     echo -n ${ver:1}
 
 [private]
